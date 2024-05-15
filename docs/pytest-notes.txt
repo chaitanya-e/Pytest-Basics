@@ -1,0 +1,87 @@
+*******************************
+*******************************
+*****                     *****
+*****   PyTest Notes      *****
+*****                     *****
+*******************************
+*******************************
+
+Naming conventions:
+===================
+Ensure the file name starts with test_.
+Ensure the class name starts with Test (uppercase T).
+Ensure the method names start with test_.
+
+Execution Commands - Navigate to directory where tests are defined and give below Commands:
+==================
+    py.test = runs all tests in the directory. Does not print output
+
+    py.test -v = runs all tests in the directory. Does not print output. Gives additional information on Execution
+
+    py.test -v -s = runs all tests, prints output
+
+    py.test filename.py -v -s = runs all tests in filename.py
+
+    py.test -k payment -v -s = runs all tests that contain name "payment" as part of test name
+
+    py.test -m smoke -v -s = runs all tests that are marked as smoke
+        We can mark(custom mark) a test as smoke(or any name) by adding a line '@pytest.mark.smoke' above 'def test_name():' 
+        Make sure to 'import pytest' in the test_filename.py
+
+        If we want to skip any test just mark '@pytest.mark.skip'. skip is a predefined mark.
+        Then when we run py.test -v -s --> all the tests execute except for the test marked with skip
+
+        If we want to execute a test but do not want to report whether it is pass or fail, mark it with '@pytest.mark.xfail'
+        The test marked with xfail will execute but it does not report a pass / fail in execution log
+        This is helpful if there are subsequent tests that depend on a parent test irrespective of parent test result
+
+Fixtures
+========
+    These are methods that are similar to setup and teardown of testng
+    
+    Fixture code runs before a test and after the test completes execution
+    
+    A fixture defined in test_testname.py file is limited only to the file. It cannot be referenced in a different file
+    
+    To mark a method as fixture use '@pytest.fixture' before 'def fixtureName():'
+    Such a fixture can be referenced in any particular test method by passing name of fixture as test method parameter
+        example :- def test_fixture(fixtureName):
+    
+    Yield is a keyword that can be used in a fixture method. 
+    All code before yield will run before test and all code after yield will run after test
+    
+    If we want to define a global fixture that can be used by all tests spawned across multiple files - define it in 'conftest.py'
+    
+    To use a fixture in a particular test, def test_name(fixture) --> using this convention can be cumbersome if number of tests are large
+    Therefore the workaround here is to define all the tests in a class.
+    Example:- 
+        @pytest.mark.usefixtures("fixtureName")   ----> This makes fixture applicable to all test methods defined in the class
+        class Test_ClassContainingTests:
+            def test1(self): ---> No need to define fixtureName in each test method
+                .......
+    This representation runs the fixture for all tests defined within the class
+
+    If we want to run a fixture only before/after class, but not before/after individual test methods --> 
+    when defining fixture, use 
+        @pytest.fixture(scope="class")
+        def fixturename():
+            ...
+
+    If fixture returns any data, then when implementing the test method that uses the fixture, we should give fixturename explicitly
+        def test_fixturetest(self, fixturename):
+            print(fixturename)
+
+    There is a way to trigger the tests multiple times with different set of inputs passed via fixture
+        @pytest.fixture(params=[("x","y","z"), (1,2), ("a","b","c")]) --> This is similar to dataprovider in testng
+        def fixture(request): --> this fixture is run n number of times where n = no of parameters passed.
+            return request.param --> returns ("x","y","z") in first run/ (1,2) in second run / ("a","b","c") in third run
+
+        def test1(fixture): --> this test will be called 3 times as the fixture passes parameters 3 times
+            print(fixture)
+
+        # request is mandatory object to be used in defining fixture. request.param is built in keyword to return individual param
+    
+Reports
+=======
+    py.test --html=report.html --> pip install pytest-html 
+    Generates a html report with test execution
